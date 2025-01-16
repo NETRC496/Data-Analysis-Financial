@@ -62,11 +62,11 @@ if answer == 'N':
     print("Thank you for using D.A.S.H.!")
 else:
     # Uso de plotly para realizar el grafico con std en el eje x y Average en el eje y
-    fig = px.scatter(dfgraf, x='std', y='Average', title='Relación entre std y Average')
+    fig = px.scatter(dfgraf, x='Average', y='std', title='Relación entre std y Average')
 
 
     # Añadir la línea de regresión de beta al gráfico
-    x_vals = np.linspace(dfgraf['std'].min(), dfgraf['std'].max(), 100)
+    x_vals = np.linspace(dfgraf['Average'].min(), dfgraf['Average'].max(), 100)
     y_vals = beta * x_vals
 
     fig.add_trace(go.Scatter(x=x_vals, y=y_vals, mode='lines', name='Beta Line', line=dict(color='red')))
