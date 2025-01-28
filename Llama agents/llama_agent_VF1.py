@@ -91,6 +91,7 @@ try:
         Intersección = {'Average': f"{x:.4f}", 'Risk': f"{y:.4f}"}
         print(f"Intersección {i + 1}: x = {x:.4f}, std = {y:.4f}")
     return Intersección{i + 1}
-
+    
+        
 
 def Model_Po_Ex_2(stock: str) -> tuple:
