@@ -37,7 +37,7 @@ def StockAns (stock: str) -> str
     datos.dropna(inplace=True)
     
     #Función para empezar analisis de datos sobre la acción solicitada
-    def EAnlis ():
+    def EAnlis (stock):
 
         def Model_Po_Ex (stock): 
             #This function generate the answer to the question "What is the risk and return of stock x?"
@@ -78,35 +78,30 @@ def StockAns (stock: str) -> str
                         'std_pred_exp': datos['std_pred_exp'].tolist()}
 
                 # Función para encontrar la intersección entre dos funciones
-            def interseccion(x):
-                std_poly = alpha_poly + beta_1_poly * x + beta_2_poly * x**2
-                std_exp = alpha_exp * np.exp(beta_exp * x)
-                return std_poly - std_exp
+                def interseccion(x):
+                    std_poly = alpha_poly + beta_1_poly * x + beta_2_poly * x**2
+                    std_exp = alpha_exp * np.exp(beta_exp * x)
+                    return std_poly - std_exp
 
-            # Valores iniciales para buscar las raíces
-            valores_iniciales = [-0.05, 0.05]  # Suponiendo dos intersecciones
+                # Valores iniciales para buscar las raíces
+                valores_iniciales = [-0.05, 0.05]  # Suponiendo dos intersecciones
 
-            # Resolver las raíces
-            intersecciones = [fsolve(interseccion, x0)[0] for x0 in valores_iniciales]
+                # Resolver las raíces
+                intersecciones = [fsolve(interseccion, x0)[0] for x0 in valores_iniciales]
 
-            # Calcular las desviaciones estándar en las intersecciones
-            resultados = [(x, alpha_poly + beta_1_poly * x + beta_2_poly * x**2) for x in intersecciones]
+                # Calcular las desviaciones estándar en las intersecciones
+                resultados = [(x, alpha_poly + beta_1_poly * x + beta_2_poly * x**2) for x in intersecciones]
 
-            # Mostrar los resultados
-            Intersección = {}
-            for i, (x, y) in enumerate(resultados):
-                Intersección = {'Average': f"{x:.4f}", 'Risk': f"{y:.4f}"}
-                # Crear un diccionario con las intersecciones
-                intersecciones_dict = {
-                    'Average': [x for x, y in resultados],
-                    'Risk': [y for x, y in resultados]
-                }
-            if intersecciones_dict:
-                print(f"""Las siguientes intersecciones son {intersecciones_dict}.
-                El retorno mínimo es {float(intersecciones_dict['Average'][0] * 100).__round__(4)}% y el retorno máximo es {float(intersecciones_dict['Average'][1] * 100).__round__(4)}% 
-                con un riesgo máximo de {float(intersecciones_dict['Risk'][1] * 100).__round__(4)}% y riesgo mínimo de {float(intersecciones_dict['Risk'][0] * 100).__round__(4)}%""")
-            else:
-                print("No se encontraron intersecciones")
+                # Mostrar los resultados
+                Intersección = {}
+                for i, (x, y) in enumerate(resultados):
+                    Intersección = {'Average': f"{x:.4f}", 'Risk': f"{y:.4f}"}
+                    # Crear un diccionario con las intersecciones
+                    intersecciones_dict = {
+                        'Average': [x for x, y in resultados],
+                        'Risk': [y for x, y in resultados]
+                    }
+                print(intersecciones_dict)
             except ValueError as e:
                 return "Error en la ejecución de la función" + str(e)
 
@@ -161,12 +156,8 @@ def StockAns (stock: str) -> str
                     'Average': [x for x, y in resultados_2g],
                     'Risk': [y for x, y in resultados_2g]
                 }
-                if intersecciones_dict2g:
-                    print(f"""Las siguientes intersecciones son {intersecciones_dict2g}.
-                    El retorno mínimo es {float(intersecciones_dict2g['Average'][0] * 100).__round__(4)}% y el retorno máximo es {float(intersecciones_dict2g['Average'][1] * 100).__round__(4)}% 
-                    con un riesgo máximo de {float(intersecciones_dict2g['Risk'][1] * 100).__round__(4)}% y riesgo mínimo de {float(intersecciones_dict2g['Risk'][0] * 100).__round__(4)}%""")
-                else:
-                    print("No se encontraron intersecciones")
+                #Mostrar resultados
+                print(intersecciones_dict2g)
             except ValueError as e:
                 return "Error en la ejecución de la función" + str(e)
         def Model_log(stock):
@@ -187,3 +178,86 @@ def StockAns (stock: str) -> str
 
                 # Predicciones del modelo exponencial con logaritmos
                 datos['log_std_pred_exp'] = modelo_exp_log.params[0] + beta_exp_log * datos['Average']
+
+                # Generar valores de x
+                x_vals = np.linspace(datos['Average'].min(), datos['Average'].max(), 500)
+
+                # Calcular valores de y para el modelo exponencial con logaritmos
+                log_std_pred_exp = modelo_exp_log.params[0] + beta_exp_log * x_vals
+                std_pred_exp = np.exp(log_std_pred_exp)  # Transformación inversa para obtener valores positivos
+
+                # Filtrar valores de x y y que no superen el rango de 0.025 y sean positivos
+                rango_mask_exp_log = (std_pred_exp > 0) & (std_pred_exp <= 0.0455)
+
+                # Crear diccionario con los datos filtrados
+                datos_filtrados = {
+                    'Average': x_vals[rango_mask_exp_log],
+                    'Risk': std_pred_exp[rango_mask_exp_log]
+                }
+
+                # Convertir a DataFrame
+                df_filtrado = pd.DataFrame(datos_filtrados)
+
+                # Calcular máximos y mínimos, acotación de la ecuación.
+                max_average = df_filtrado['Average'].max()
+                min_average = df_filtrado['Average'].min()
+                max_risk = df_filtrado['Risk'].max()
+                min_risk = df_filtrado['Risk'].min()
+
+                # Mostrar resultados
+                # Crear diccionario con los resultados
+                resultados_log = {
+                    'average': [max_average,min_average],
+                    'max_risk': [max_risk, min_risk]
+                }
+
+                print(f"Resultados del modelo logarítmico: {resultados_log}")
+            except ValueError as e:
+                return "Error en la ejecución del modelo: " + str(e)
+        # Comparar los modelos y mostrar el mejor resultado
+        def compare_models():
+            try:
+                # Ejecutar los modelos y capturar sus resultados
+                print("Ejecutando Model_Po_Ex...")
+                Model_Po_Ex(stock)
+                print("\nEjecutando Model_Po_Ex_2...")
+                Model_Po_Ex_2(stock)
+                print("\nEjecutando Model_log...")
+                Model_log(stock)
+                print("Generando resultados...")
+                resultados_modelo_1 = Model_Po_Ex(stock)
+                resultados_modelo_2 = Model_Po_Ex_2(stock)
+                resultados_modelo_3 = Model_log(stock)
+
+                # Comparar los riesgos y retornos
+                min_risk_model_1 = min(resultados_modelo_1['Risk'])
+                max_return_model_1 = max(resultados_modelo_1['Average'])
+                    
+                min_risk_model_2 = min(resultados_modelo_2['Risk'])
+                max_return_model_2 = max(resultados_modelo_2['Average'])
+                    
+                min_risk_model_3 = min(resultados_modelo_3['Risk'])
+                max_return_model_3 = max(resultados_modelo_3['Average'])
+
+                # Determinar el mejor modelo
+                best_model = None
+                if min_risk_model_1 <= min_risk_model_2 and min_risk_model_1 <= min_risk_model_3:
+                        best_model = "Model_Po_Ex"
+                elif min_risk_model_2 <= min_risk_model_1 and min_risk_model_2 <= min_risk_model_3:
+                        best_model = "Model_Po_Ex_2"
+                else:
+                        best_model = "Model_log"
+
+                print(f"El mejor modelo es {best_model} con el menor riesgo y mayor retorno.")
+                    
+                
+            except Exception as e:
+                print("Error al comparar los modelos: " + str(e))
+
+        return best_model
+
+    best_model = compare_models()
+    return print(f"El mejor modelo es {best_model} con el menor riesgo y mayor retorno")
+
+#Crear herramientas de las funciones
+Analysis_tool = FunctionTool.from_defaults(fn=StockAns)
